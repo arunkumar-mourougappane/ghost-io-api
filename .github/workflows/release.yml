@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify RELEASE_NOTES.md exists and is non-empty
+        run: |
+          if [ ! -f RELEASE_NOTES.md ]; then
+            echo "ERROR: RELEASE_NOTES.md not found in repository root." >&2
+            exit 1
+          fi
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "ERROR: RELEASE_NOTES.md is empty." >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo test --verbose
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
