@@ -38,6 +38,18 @@ Deep-dives into specific feature areas with Rust implementation notes.
 
 ---
 
+## examples/
+
+Detailed design for each example program under `examples/` in the crate root.
+Each entry covers: purpose, CLI invocation, sample output, key code sketch,
+and which library modules it exercises.
+
+| Document | Description |
+|----------|-------------|
+| [example-apps.md](examples/example-apps.md) | Eight example programs: `list-posts` (Content API pagination), `site-stats` (parallel multi-endpoint fetch), `publish-post` (Admin API single post), `publish-markdown` (full pipeline with progress events), `bulk-publish` (concurrent directory publishing), `upload-image` (media upload), `ghost-backup` (full export to markdown), and `ghost-cli` (clap-based CLI with credential management and all subcommands). |
+
+---
+
 ## Implementation Roadmap
 
 Work should proceed roughly in this order, cross-referencing the documents above:
