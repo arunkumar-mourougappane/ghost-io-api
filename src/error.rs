@@ -77,7 +77,11 @@ impl GhostError {
     ///     None,
     /// );
     /// ```
-    pub fn api(message: impl Into<String>, error_type: impl Into<String>, context: Option<String>) -> Self {
+    pub fn api(
+        message: impl Into<String>,
+        error_type: impl Into<String>,
+        context: Option<String>,
+    ) -> Self {
         Self::Api {
             message: message.into(),
             error_type: error_type.into(),
@@ -211,7 +215,7 @@ mod tests {
         // let reqwest_error: reqwest::Error = ...;
         // let ghost_error: GhostError = reqwest_error.into();
         // assert!(ghost_error.is_http_error());
-        
+
         // We can verify the From trait exists at compile time
         fn _assert_from_impl(e: reqwest::Error) -> GhostError {
             e.into()
@@ -220,8 +224,7 @@ mod tests {
 
     #[test]
     fn test_json_error_conversion() {
-        let json_error = serde_json::from_str::<serde_json::Value>("not valid json")
-            .unwrap_err();
+        let json_error = serde_json::from_str::<serde_json::Value>("not valid json").unwrap_err();
         let error: GhostError = json_error.into();
         assert!(error.is_json_error());
         assert!(!error.is_api_error());
@@ -295,11 +298,7 @@ mod tests {
 
     #[test]
     fn test_api_error_accessors() {
-        let error = GhostError::api(
-            "Test message",
-            "TestType",
-            Some("Test context".to_string()),
-        );
+        let error = GhostError::api("Test message", "TestType", Some("Test context".to_string()));
 
         assert_eq!(error.api_message(), Some("Test message"));
         assert_eq!(error.api_error_type(), Some("TestType"));
