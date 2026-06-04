@@ -4,3 +4,4 @@
 //! resources and their associated types.
 
 pub mod pagination;
+pub mod post;
