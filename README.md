@@ -5,7 +5,7 @@ A strongly-typed, async Rust client for the [Ghost CMS](https://ghost.org/) API.
 [![Crates.io](https://img.shields.io/crates/v/ghost-io-api.svg)](https://crates.io/crates/ghost-io-api)
 [![Docs.rs](https://docs.rs/ghost-io-api/badge.svg)](https://docs.rs/ghost-io-api)
 [![CI](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/ci.yml/badge.svg)](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/ci.yml)
-[![Docs](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/docs.yml/badge.svg)](https://arunkumar-mourougappane.github.io/ghost-io-api/ghost_io_api/)
+[![Docs](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/docs.yml/badge.svg)](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/docs.yml)
 
 > ⚠️ **v0.1.0 — Content API is stable. Admin API is planned for v0.2.0.**
 
