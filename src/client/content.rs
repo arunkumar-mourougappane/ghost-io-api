@@ -22,7 +22,7 @@ use crate::auth::content::ContentApiKey;
 use crate::error::{GhostError, Result};
 use crate::models::pagination::Meta;
 use crate::models::post::Post;
-use reqwest::{Client, header};
+use reqwest::{header, Client};
 use serde::Deserialize;
 
 const GHOST_API_VERSION: &str = "v5.0";
@@ -212,10 +212,7 @@ impl GhostContentClient {
     ///
     /// Returns `GhostError::Api` with `"NotFoundError"` if no post matches the slug.
     pub async fn read_post_by_slug(&self, slug: &str, include: Option<&str>) -> Result<Post> {
-        let url = format!(
-            "{}{}/posts/slug/{}/",
-            self.base_url, CONTENT_API_PATH, slug
-        );
+        let url = format!("{}{}/posts/slug/{}/", self.base_url, CONTENT_API_PATH, slug);
         self.read_post(&url, include).await
     }
 
@@ -243,12 +240,20 @@ impl GhostContentClient {
             Ok(response.json::<T>().await?)
         } else {
             let api_errors: GhostApiErrors = response.json().await?;
-            let first = api_errors.errors.into_iter().next().unwrap_or(GhostApiError {
-                message: "Unknown API error".to_string(),
-                error_type: "UnknownError".to_string(),
-                context: None,
-            });
-            Err(GhostError::api(first.message, first.error_type, first.context))
+            let first = api_errors
+                .errors
+                .into_iter()
+                .next()
+                .unwrap_or(GhostApiError {
+                    message: "Unknown API error".to_string(),
+                    error_type: "UnknownError".to_string(),
+                    context: None,
+                });
+            Err(GhostError::api(
+                first.message,
+                first.error_type,
+                first.context,
+            ))
         }
     }
 }
@@ -364,7 +369,13 @@ mod integration_tests {
     async fn test_read_post_by_slug_integration() {
         let client = make_client();
         // Fetch first post slug from browse, then read it
-        let browse = client.browse_posts(BrowsePostsParams { limit: Some(1), ..Default::default() }).await.unwrap();
+        let browse = client
+            .browse_posts(BrowsePostsParams {
+                limit: Some(1),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
         let slug = &browse.posts[0].slug;
         let post = client.read_post_by_slug(slug, None).await;
         assert!(post.is_ok(), "read_post_by_slug failed: {:?}", post);
@@ -374,7 +385,13 @@ mod integration_tests {
     #[tokio::test]
     async fn test_read_post_by_id_integration() {
         let client = make_client();
-        let browse = client.browse_posts(BrowsePostsParams { limit: Some(1), ..Default::default() }).await.unwrap();
+        let browse = client
+            .browse_posts(BrowsePostsParams {
+                limit: Some(1),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
         let id = &browse.posts[0].id;
         let post = client.read_post_by_id(id, None).await;
         assert!(post.is_ok(), "read_post_by_id failed: {:?}", post);
@@ -384,7 +401,9 @@ mod integration_tests {
     #[tokio::test]
     async fn test_read_post_not_found() {
         let client = make_client();
-        let result = client.read_post_by_id("000000000000000000000000", None).await;
+        let result = client
+            .read_post_by_id("000000000000000000000000", None)
+            .await;
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.is_api_error());
