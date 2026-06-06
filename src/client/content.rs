@@ -300,6 +300,11 @@ impl GhostContentClient {
     // ── Posts ────────────────────────────────────────────────────────────────
 
     /// Browses published posts with optional filtering, sorting, and pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn browse_posts(&self, params: BrowsePostsParams) -> Result<PostsResponse> {
         let url = format!("{}{}/posts/", self.base_url, CONTENT_API_PATH);
         let mut query = self.base_query();
@@ -310,7 +315,12 @@ impl GhostContentClient {
 
     /// Reads a single post by its Ghost ID.
     ///
-    /// `include` is an optional comma-separated list of relations such as `"authors,tags"`.
+    /// `include` is an optional comma-separated list of relations to embed, e.g. `"authors,tags"`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// post matches the ID, or a network / decoding error otherwise.
     pub async fn read_post_by_id(&self, id: &str, include: Option<&str>) -> Result<Post> {
         let url = format!("{}{}/posts/{}/", self.base_url, CONTENT_API_PATH, id);
         self.read_single_item::<PostResponse, Post>(&url, include, |r| r.posts)
@@ -321,6 +331,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single post by its slug.
+    ///
+    /// `include` is an optional comma-separated list of relations to embed, e.g. `"authors,tags"`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// post matches the slug, or a network / decoding error otherwise.
     pub async fn read_post_by_slug(&self, slug: &str, include: Option<&str>) -> Result<Post> {
         let url = format!("{}{}/posts/slug/{}/", self.base_url, CONTENT_API_PATH, slug);
         self.read_single_item::<PostResponse, Post>(&url, include, |r| r.posts)
@@ -333,6 +350,11 @@ impl GhostContentClient {
     // ── Pages ────────────────────────────────────────────────────────────────
 
     /// Browses published pages with optional filtering, sorting, and pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn browse_pages(&self, params: BrowsePagesParams) -> Result<PagesResponse> {
         let url = format!("{}{}/pages/", self.base_url, CONTENT_API_PATH);
         let mut query = self.base_query();
@@ -342,6 +364,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single page by its Ghost ID.
+    ///
+    /// `include` is an optional comma-separated list of relations to embed, e.g. `"authors"`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// page matches the ID, or a network / decoding error otherwise.
     pub async fn read_page_by_id(&self, id: &str, include: Option<&str>) -> Result<Page> {
         let url = format!("{}{}/pages/{}/", self.base_url, CONTENT_API_PATH, id);
         self.read_single_item::<PageResponse, Page>(&url, include, |r| r.pages)
@@ -352,6 +381,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single page by its slug.
+    ///
+    /// `include` is an optional comma-separated list of relations to embed, e.g. `"authors"`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// page matches the slug, or a network / decoding error otherwise.
     pub async fn read_page_by_slug(&self, slug: &str, include: Option<&str>) -> Result<Page> {
         let url = format!("{}{}/pages/slug/{}/", self.base_url, CONTENT_API_PATH, slug);
         self.read_single_item::<PageResponse, Page>(&url, include, |r| r.pages)
@@ -364,6 +400,11 @@ impl GhostContentClient {
     // ── Tags ─────────────────────────────────────────────────────────────────
 
     /// Browses tags with optional filtering, sorting, and pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn browse_tags(&self, params: BrowseTagsParams) -> Result<TagsResponse> {
         let url = format!("{}{}/tags/", self.base_url, CONTENT_API_PATH);
         let mut query = self.base_query();
@@ -373,6 +414,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single tag by its Ghost ID.
+    ///
+    /// `include` accepts `"count.posts"` to embed the post count for this tag.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// tag matches the ID, or a network / decoding error otherwise.
     pub async fn read_tag_by_id(&self, id: &str, include: Option<&str>) -> Result<Tag> {
         let url = format!("{}{}/tags/{}/", self.base_url, CONTENT_API_PATH, id);
         self.read_single_item::<TagResponse, Tag>(&url, include, |r| r.tags)
@@ -383,6 +431,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single tag by its slug.
+    ///
+    /// `include` accepts `"count.posts"` to embed the post count for this tag.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// tag matches the slug, or a network / decoding error otherwise.
     pub async fn read_tag_by_slug(&self, slug: &str, include: Option<&str>) -> Result<Tag> {
         let url = format!("{}{}/tags/slug/{}/", self.base_url, CONTENT_API_PATH, slug);
         self.read_single_item::<TagResponse, Tag>(&url, include, |r| r.tags)
@@ -395,6 +450,11 @@ impl GhostContentClient {
     // ── Authors ──────────────────────────────────────────────────────────────
 
     /// Browses authors with optional filtering, sorting, and pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn browse_authors(&self, params: BrowseAuthorsParams) -> Result<AuthorsResponse> {
         let url = format!("{}{}/authors/", self.base_url, CONTENT_API_PATH);
         let mut query = self.base_query();
@@ -404,6 +464,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single author by their Ghost ID.
+    ///
+    /// `include` accepts `"count.posts"` to embed the post count for this author.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// author matches the ID, or a network / decoding error otherwise.
     pub async fn read_author_by_id(&self, id: &str, include: Option<&str>) -> Result<Author> {
         let url = format!("{}{}/authors/{}/", self.base_url, CONTENT_API_PATH, id);
         self.read_single_item::<AuthorResponse, Author>(&url, include, |r| r.authors)
@@ -414,6 +481,13 @@ impl GhostContentClient {
     }
 
     /// Reads a single author by their slug.
+    ///
+    /// `include` accepts `"count.posts"` to embed the post count for this author.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError::Api`] with `"NotFoundError"` if no
+    /// author matches the slug, or a network / decoding error otherwise.
     pub async fn read_author_by_slug(&self, slug: &str, include: Option<&str>) -> Result<Author> {
         let url = format!(
             "{}{}/authors/slug/{}/",
@@ -428,7 +502,12 @@ impl GhostContentClient {
 
     // ── Tiers ────────────────────────────────────────────────────────────────
 
-    /// Browses membership tiers.
+    /// Browses membership tiers (free and paid).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn browse_tiers(&self, params: BrowseTiersParams) -> Result<TiersResponse> {
         let url = format!("{}{}/tiers/", self.base_url, CONTENT_API_PATH);
         let mut query = self.base_query();
@@ -439,7 +518,12 @@ impl GhostContentClient {
 
     // ── Settings ─────────────────────────────────────────────────────────────
 
-    /// Fetches site-wide settings.
+    /// Fetches site-wide settings (title, logo, navigation, social links, etc.).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GhostError`] on network failure, a non-2xx HTTP
+    /// response, or a JSON decoding error.
     pub async fn get_settings(&self) -> Result<Settings> {
         let url = format!("{}{}/settings/", self.base_url, CONTENT_API_PATH);
         let query = self.base_query();
