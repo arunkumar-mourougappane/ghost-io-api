@@ -126,7 +126,7 @@ impl Tag {
     /// assert!(!internal_tag.is_public());
     /// ```
     pub fn is_public(&self) -> bool {
-        self.visibility.as_deref().is_none_or(|v| v == "public")
+        matches!(self.visibility.as_deref(), None | Some("public"))
     }
 }
 
