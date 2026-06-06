@@ -201,6 +201,7 @@ pub struct Post {
 
     // === Status & Visibility ===
     /// Publication status: draft, published, scheduled, or sent.
+    #[serde(default)]
     pub status: PostStatus,
 
     /// Who can see the post: "public", "members", "paid", "tiers".
