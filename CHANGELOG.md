@@ -63,9 +63,10 @@ Initial release. Full read-only access to the Ghost Content API.
 - **Pages**: `browse_pages()`, `read_page_by_id()`, `read_page_by_slug()`
 - **Tags**: `browse_tags()`, `read_tag_by_id()`, `read_tag_by_slug()`
 - **Authors**: `browse_authors()`, `read_author_by_id()`, `read_author_by_slug()`
-- **Tiers**: `browse_tiers()` with `Tier` model (free / paid membership tiers)
+- **Tiers**: `browse_tiers()` with inline `Tier` model (free / paid membership tiers)
 - **Settings**: `get_settings()`
-- `BrowsePostsParams` struct (and type aliases for each resource) for optional filtering, sorting, pagination, field selection, and relation inclusion
+- `BrowsePostsParams` struct (and type aliases for each resource) for optional
+  filtering, sorting, pagination, field selection, and relation inclusion
 
 #### Query parameter builder (`src/params/browse.rs`)
 
@@ -81,11 +82,34 @@ Initial release. Full read-only access to the Ghost Content API.
   - Configurable via `GHOST_URL` and `GHOST_CONTENT_KEY` environment variables
   - Falls back to `demo.ghost.io` when env vars are absent
 
+#### CI / CD (`.github/workflows/`)
+
+- `docs.yml` — builds and deploys API documentation to GitHub Pages on every
+  push to `main`
+  - Runs under strict doc-lint flags (`-D warnings`, `-D missing_docs`,
+    `-D rustdoc::redundant_explicit_links`) so any documentation regression
+    fails the workflow
+  - Injects a root `index.html` redirect for a clean entry-point URL
+  - Deployed to `https://arunkumar-mourougappane.github.io/ghost-io-api/`
+
 ### Fixed
 
-- `Post::status` field now has `#[serde(default)]` so posts without an explicit
-  `status` in the API response (which Ghost occasionally omits) deserialise
-  correctly instead of returning a decoding error.
+- `Post::status` field: added `#[serde(default)]` so posts where the Ghost API
+  omits the `status` key deserialise correctly (defaulting to `PostStatus::Draft`)
+  instead of returning a JSON decoding error. Discovered via integration tests
+  against `demo.ghost.io`.
+
+### Documentation
+
+- `lib.rs`: replaced placeholder crate-level docs with accurate module
+  cross-links and a working `no_run` quick-start example; removed reference to
+  the not-yet-implemented `GhostAdminClient`; added `#![warn(missing_docs)]`
+- `client/content.rs`: added `# Errors` sections and `include` parameter
+  documentation to all 14 public async methods; fixed 14 redundant explicit
+  intra-doc link targets flagged by `rustdoc::redundant_explicit_links`
+- `README.md`: rewrote with real usage examples, feature table, running-tests
+  instructions, and correct badge set (replaced non-functional `docs.rs` badge
+  with a GitHub Pages workflow badge)
 
 ### Dependencies
 

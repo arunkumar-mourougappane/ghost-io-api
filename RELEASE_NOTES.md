@@ -69,18 +69,34 @@ GHOST_CONTENT_KEY=your-key \
 cargo run --example list_posts
 ```
 
+### API documentation published to GitHub Pages
+
+Documentation is built and deployed automatically on every push to `main`
+and is available at:
+
+**<https://arunkumar-mourougappane.github.io/ghost-io-api/ghost_io_api/>**
+
+The documentation workflow runs under strict lint flags (`-D missing_docs`,
+`-D warnings`, `-D rustdoc::redundant_explicit_links`), ensuring every public
+item is documented and all intra-doc links resolve correctly.
+
 ## Bug Fixes
 
 - **`Post::status` deserialization** — added `#[serde(default)]` so posts where
-  Ghost omits the `status` field in the response (observed on demo.ghost.io)
-  deserialise correctly, defaulting to `PostStatus::Draft`.
+  Ghost omits the `status` field in the API response (observed on `demo.ghost.io`)
+  deserialise correctly, defaulting to `PostStatus::Draft` instead of returning
+  a JSON decoding error.
 
 ## Testing
 
 - **149 unit tests** across all modules
-- **66 doc-tests** (every public API example in the documentation is verified)
+- **67 doc-tests** — every public API example in the documentation is compiled
+  and executed as part of `cargo test`
 - **10 integration tests** run against the live Ghost demo site
   (`cargo test --features integration-tests`)
+
+All tests pass clean. Clippy (`-D warnings`) and `rustfmt` checks are enforced
+in CI on Ubuntu, macOS, and Windows.
 
 ## Upgrade Guide
 
