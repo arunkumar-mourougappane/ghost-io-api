@@ -220,26 +220,6 @@ cargo test
 cargo test --features integration-tests
 ```
 
-## Module Structure
-
-```
-src/
-├── auth/
-│   └── content.rs      # ContentApiKey — validation and query param injection
-├── client/
-│   └── content.rs      # GhostContentClient — all Content API endpoints
-├── error.rs            # GhostError enum (API / HTTP / JSON / Auth)
-├── models/
-│   ├── author.rs       # Author struct
-│   ├── page.rs         # Page struct + PageStatus enum
-│   ├── pagination.rs   # Meta + Pagination structs
-│   ├── post.rs         # Post struct + PostStatus enum
-│   ├── settings.rs     # Settings struct + NavItem
-│   └── tag.rs          # Tag struct + PostCount
-└── params/
-    └── browse.rs       # BrowseParams fluent builder
-```
-
 ## License
 
 MIT © 2026 [Arunkumar Mourougappane](https://github.com/arunkumar-mourougappane)
