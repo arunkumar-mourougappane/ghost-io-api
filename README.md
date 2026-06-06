@@ -1,4 +1,4 @@
-# ghost-io-api
+# Ghost.io API
 
 A strongly-typed, async Rust client for the [Ghost CMS](https://ghost.org/) API.
 
