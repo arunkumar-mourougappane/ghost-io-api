@@ -1,16 +1,16 @@
 [package]
 name = "ghost-io-api"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Arunkumar Mourougappane <amouroug.dev@gmail.com>"]
-description = "Strongly-typed, async Rust client for the Ghost CMS Content API"
+description = "Strongly-typed, async Rust client for the Ghost CMS Content and Admin APIs"
 license = "MIT"
 repository = "https://github.com/arunkumar-mourougappane/ghost-io-api"
 homepage = "https://github.com/arunkumar-mourougappane/ghost-io-api"
 documentation = "https://docs.rs/ghost-io-api"
 readme = "README.md"
-keywords = ["ghost", "cms", "api", "async", "content"]
+keywords = ["ghost", "cms", "api", "async", "admin"]
 categories = ["web-programming::http-client", "api-bindings", "asynchronous"]
 exclude = [
     ".github/",
