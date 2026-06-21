@@ -751,6 +751,230 @@ impl PostCreateEnvelope {
     }
 }
 
+// ── PostUpdate ────────────────────────────────────────────────────────────────
+
+/// Input model for updating an existing Ghost post via
+/// `PUT /ghost/api/admin/posts/{id}/`.
+///
+/// `updated_at` is **required** by Ghost as an optimistic-concurrency token:
+/// if the value you send does not match the server's current `updated_at`,
+/// Ghost rejects the request with a conflict error, preventing silent
+/// overwrite of concurrent edits.
+///
+/// Every other field is optional; only the fields you set will be sent in the
+/// JSON payload.  Wrap this in a [`PostUpdateEnvelope`] before sending.
+///
+/// # Example
+///
+/// ```
+/// use ghost_io_api::models::post::{PostUpdate, PostStatus, TagRef};
+///
+/// let update = PostUpdate {
+///     updated_at: "2026-01-01T00:00:00.000Z".to_string(),
+///     status: Some(PostStatus::Published),
+///     tags: Some(vec![TagRef::by_slug("rust")]),
+///     ..Default::default()
+/// };
+///
+/// assert_eq!(update.updated_at, "2026-01-01T00:00:00.000Z");
+/// assert_eq!(update.status, Some(PostStatus::Published));
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct PostUpdate {
+    // === Collision-detection (required) ===
+    /// ISO 8601 timestamp of the post's last update.
+    ///
+    /// Ghost rejects the request if this does not match the server's
+    /// current value, preventing silent overwrites of concurrent edits.
+    pub updated_at: String,
+
+    // === Content ===
+    /// Updated post title.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+
+    /// Updated rich text content in Lexical JSON format.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lexical: Option<String>,
+
+    /// Updated HTML content (alternative to `lexical`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub html: Option<String>,
+
+    /// Updated custom excerpt shown in post listings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_excerpt: Option<String>,
+
+    // === Identifiers ===
+    /// Updated URL slug.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+
+    // === Status & Visibility ===
+    /// Updated publication status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<PostStatus>,
+
+    /// Updated visibility: `"public"`, `"members"`, `"paid"`, or `"tiers"`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<String>,
+
+    /// Updated email-only flag.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email_only: Option<bool>,
+
+    /// Updated featured flag.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub featured: Option<bool>,
+
+    // === Scheduling ===
+    /// Updated publication timestamp (ISO 8601). Required when setting
+    /// `status` to `"scheduled"`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub published_at: Option<String>,
+
+    // === Media ===
+    /// Updated feature image URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feature_image: Option<String>,
+
+    /// Updated feature image alt text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feature_image_alt: Option<String>,
+
+    /// Updated feature image caption.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feature_image_caption: Option<String>,
+
+    // === Relationships ===
+    /// Replacement tag list. Resolves by slug or creates by name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<TagRef>>,
+
+    /// Replacement author list. Resolves by id or email.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authors: Option<Vec<AuthorRef>>,
+
+    /// Updated newsletter slug.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub newsletter: Option<String>,
+
+    // === SEO ===
+    /// Updated meta title.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta_title: Option<String>,
+
+    /// Updated meta description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta_description: Option<String>,
+
+    /// Updated canonical URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub canonical_url: Option<String>,
+
+    // === Open Graph ===
+    /// Updated Open Graph image URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub og_image: Option<String>,
+
+    /// Updated Open Graph title.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub og_title: Option<String>,
+
+    /// Updated Open Graph description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub og_description: Option<String>,
+
+    // === Twitter Cards ===
+    /// Updated Twitter Card image URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub twitter_image: Option<String>,
+
+    /// Updated Twitter Card title.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub twitter_title: Option<String>,
+
+    /// Updated Twitter Card description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub twitter_description: Option<String>,
+
+    // === Code Injection ===
+    /// Updated `<head>` code injection.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub codeinjection_head: Option<String>,
+
+    /// Updated `</body>` code injection.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub codeinjection_foot: Option<String>,
+
+    /// Updated custom theme template name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_template: Option<String>,
+}
+
+impl PostUpdate {
+    /// Creates a minimal `PostUpdate` with only the required `updated_at`.
+    ///
+    /// All other fields default to `None` and are omitted from the JSON
+    /// payload, so only the fields you explicitly set will be sent.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ghost_io_api::models::post::PostUpdate;
+    ///
+    /// let u = PostUpdate::new("2026-01-01T12:00:00.000Z");
+    /// assert_eq!(u.updated_at, "2026-01-01T12:00:00.000Z");
+    /// assert!(u.title.is_none());
+    /// assert!(u.status.is_none());
+    /// ```
+    pub fn new(updated_at: impl Into<String>) -> Self {
+        Self {
+            updated_at: updated_at.into(),
+            ..Default::default()
+        }
+    }
+}
+
+/// Request envelope for `PUT /ghost/api/admin/posts/{id}/`.
+///
+/// The Ghost Admin API requires the update payload to be wrapped in a
+/// top-level `posts` array even when updating a single post.
+///
+/// # Example
+///
+/// ```
+/// use ghost_io_api::models::post::{PostUpdate, PostUpdateEnvelope};
+/// use serde_json;
+///
+/// let envelope = PostUpdateEnvelope::new(PostUpdate::new("2026-01-01T12:00:00.000Z"));
+/// let json = serde_json::to_value(&envelope).unwrap();
+/// assert!(json["posts"].is_array());
+/// assert_eq!(json["posts"][0]["updated_at"], "2026-01-01T12:00:00.000Z");
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PostUpdateEnvelope {
+    /// Single-element array containing the post update payload.
+    pub posts: Vec<PostUpdate>,
+}
+
+impl PostUpdateEnvelope {
+    /// Wraps a single [`PostUpdate`] in the envelope Ghost expects.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ghost_io_api::models::post::{PostUpdate, PostUpdateEnvelope};
+    ///
+    /// let envelope = PostUpdateEnvelope::new(PostUpdate::new("2026-01-01T12:00:00.000Z"));
+    /// assert_eq!(envelope.posts.len(), 1);
+    /// assert_eq!(envelope.posts[0].updated_at, "2026-01-01T12:00:00.000Z");
+    /// ```
+    pub fn new(post: PostUpdate) -> Self {
+        Self { posts: vec![post] }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1347,5 +1571,252 @@ mod tests {
         let env = PostCreateEnvelope::new(PostCreate::new("Clone"));
         let cloned = env.clone();
         assert_eq!(cloned.posts[0].title, "Clone");
+    }
+
+    // ── PostUpdate ────────────────────────────────────────────────────────────
+
+    const UPDATED_AT: &str = "2026-01-15T10:30:00.000Z";
+
+    #[test]
+    fn test_post_update_new_required_only() {
+        let u = PostUpdate::new(UPDATED_AT);
+        assert_eq!(u.updated_at, UPDATED_AT);
+        assert!(u.title.is_none());
+        assert!(u.status.is_none());
+        assert!(u.slug.is_none());
+        assert!(u.lexical.is_none());
+        assert!(u.html.is_none());
+        assert!(u.custom_excerpt.is_none());
+        assert!(u.visibility.is_none());
+        assert!(u.featured.is_none());
+        assert!(u.email_only.is_none());
+        assert!(u.published_at.is_none());
+        assert!(u.feature_image.is_none());
+        assert!(u.feature_image_alt.is_none());
+        assert!(u.feature_image_caption.is_none());
+        assert!(u.tags.is_none());
+        assert!(u.authors.is_none());
+        assert!(u.newsletter.is_none());
+        assert!(u.meta_title.is_none());
+        assert!(u.meta_description.is_none());
+        assert!(u.canonical_url.is_none());
+        assert!(u.og_image.is_none());
+        assert!(u.og_title.is_none());
+        assert!(u.og_description.is_none());
+        assert!(u.twitter_image.is_none());
+        assert!(u.twitter_title.is_none());
+        assert!(u.twitter_description.is_none());
+        assert!(u.codeinjection_head.is_none());
+        assert!(u.codeinjection_foot.is_none());
+        assert!(u.custom_template.is_none());
+    }
+
+    #[test]
+    fn test_post_update_default_updated_at_empty() {
+        let u = PostUpdate::default();
+        assert_eq!(u.updated_at, "");
+    }
+
+    #[test]
+    fn test_post_update_serializes_updated_at_always() {
+        // updated_at must ALWAYS be present — it has no skip_serializing_if
+        let u = PostUpdate::new(UPDATED_AT);
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["updated_at"], UPDATED_AT);
+    }
+
+    #[test]
+    fn test_post_update_minimal_has_only_updated_at() {
+        let u = PostUpdate::new(UPDATED_AT);
+        let json = serde_json::to_value(&u).unwrap();
+        let obj = json.as_object().unwrap();
+        assert_eq!(obj.len(), 1, "only 'updated_at' should be serialised");
+        assert!(obj.contains_key("updated_at"));
+    }
+
+    #[test]
+    fn test_post_update_with_title() {
+        let u = PostUpdate {
+            updated_at: UPDATED_AT.to_string(),
+            title: Some("New Title".to_string()),
+            ..Default::default()
+        };
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["updated_at"], UPDATED_AT);
+        assert_eq!(json["title"], "New Title");
+        // No other keys should be present
+        assert_eq!(json.as_object().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_post_update_publish() {
+        let u = PostUpdate {
+            updated_at: UPDATED_AT.to_string(),
+            status: Some(PostStatus::Published),
+            ..Default::default()
+        };
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["status"], "published");
+    }
+
+    #[test]
+    fn test_post_update_unpublish_to_draft() {
+        let u = PostUpdate {
+            updated_at: UPDATED_AT.to_string(),
+            status: Some(PostStatus::Draft),
+            ..Default::default()
+        };
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["status"], "draft");
+    }
+
+    #[test]
+    fn test_post_update_schedule() {
+        let u = PostUpdate {
+            updated_at: UPDATED_AT.to_string(),
+            status: Some(PostStatus::Scheduled),
+            published_at: Some("2027-03-01T09:00:00.000Z".to_string()),
+            ..Default::default()
+        };
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["status"], "scheduled");
+        assert_eq!(json["published_at"], "2027-03-01T09:00:00.000Z");
+    }
+
+    #[test]
+    fn test_post_update_with_all_fields() {
+        let u = PostUpdate {
+            updated_at: UPDATED_AT.to_string(),
+            title: Some("Updated Title".to_string()),
+            lexical: Some("{\"root\":{}}".to_string()),
+            html: Some("<p>Updated</p>".to_string()),
+            custom_excerpt: Some("Updated excerpt".to_string()),
+            slug: Some("updated-slug".to_string()),
+            status: Some(PostStatus::Published),
+            visibility: Some("members".to_string()),
+            email_only: Some(false),
+            featured: Some(true),
+            published_at: Some("2026-06-01T09:00:00.000Z".to_string()),
+            feature_image: Some("https://example.com/new.jpg".to_string()),
+            feature_image_alt: Some("New alt".to_string()),
+            feature_image_caption: Some("New caption".to_string()),
+            tags: Some(vec![TagRef::by_slug("rust")]),
+            authors: Some(vec![AuthorRef::by_email("bob@example.com")]),
+            newsletter: Some("weekly".to_string()),
+            meta_title: Some("New SEO Title".to_string()),
+            meta_description: Some("New SEO Desc".to_string()),
+            canonical_url: Some("https://example.com/new-canon".to_string()),
+            og_image: Some("https://example.com/og-new.jpg".to_string()),
+            og_title: Some("New OG Title".to_string()),
+            og_description: Some("New OG Desc".to_string()),
+            twitter_image: Some("https://example.com/tw-new.jpg".to_string()),
+            twitter_title: Some("New TW Title".to_string()),
+            twitter_description: Some("New TW Desc".to_string()),
+            codeinjection_head: Some("<meta name='v' content='2'>".to_string()),
+            codeinjection_foot: Some("<script>console.log('v2')</script>".to_string()),
+            custom_template: Some("custom-v2".to_string()),
+        };
+
+        let json = serde_json::to_value(&u).unwrap();
+        assert_eq!(json["updated_at"], UPDATED_AT);
+        assert_eq!(json["title"], "Updated Title");
+        assert_eq!(json["status"], "published");
+        assert_eq!(json["slug"], "updated-slug");
+        assert_eq!(json["visibility"], "members");
+        assert_eq!(json["featured"], true);
+        assert_eq!(json["email_only"], false);
+        assert_eq!(json["tags"][0]["slug"], "rust");
+        assert_eq!(json["authors"][0]["email"], "bob@example.com");
+        assert_eq!(json["newsletter"], "weekly");
+        assert_eq!(json["meta_title"], "New SEO Title");
+        assert_eq!(json["og_title"], "New OG Title");
+        assert_eq!(json["twitter_title"], "New TW Title");
+        assert_eq!(json["codeinjection_head"], "<meta name='v' content='2'>");
+        assert_eq!(json["custom_template"], "custom-v2");
+    }
+
+    #[test]
+    fn test_post_update_deserialization() {
+        let json = json!({
+            "updated_at": UPDATED_AT,
+            "title": "Round-tripped",
+            "status": "draft"
+        });
+        let u: PostUpdate = serde_json::from_value(json).unwrap();
+        assert_eq!(u.updated_at, UPDATED_AT);
+        assert_eq!(u.title.as_deref(), Some("Round-tripped"));
+        assert_eq!(u.status, Some(PostStatus::Draft));
+        assert!(u.tags.is_none());
+    }
+
+    #[test]
+    fn test_post_update_deserialization_missing_optional_fields() {
+        // Only updated_at present — all options should deserialise to None
+        let json = json!({"updated_at": UPDATED_AT});
+        let u: PostUpdate = serde_json::from_value(json).unwrap();
+        assert_eq!(u.updated_at, UPDATED_AT);
+        assert!(u.title.is_none());
+        assert!(u.status.is_none());
+    }
+
+    #[test]
+    fn test_post_update_clone_eq() {
+        let u = PostUpdate::new(UPDATED_AT);
+        assert_eq!(u.clone(), u);
+    }
+
+    #[test]
+    fn test_post_update_differs_on_updated_at() {
+        let u1 = PostUpdate::new("2026-01-01T00:00:00.000Z");
+        let u2 = PostUpdate::new("2026-01-02T00:00:00.000Z");
+        assert_ne!(u1, u2);
+    }
+
+    // ── PostUpdateEnvelope ────────────────────────────────────────────────────
+
+    #[test]
+    fn test_post_update_envelope_new() {
+        let env = PostUpdateEnvelope::new(PostUpdate::new(UPDATED_AT));
+        assert_eq!(env.posts.len(), 1);
+        assert_eq!(env.posts[0].updated_at, UPDATED_AT);
+    }
+
+    #[test]
+    fn test_post_update_envelope_serialization() {
+        let env = PostUpdateEnvelope::new(PostUpdate::new(UPDATED_AT));
+        let json = serde_json::to_value(&env).unwrap();
+        assert!(json["posts"].is_array());
+        assert_eq!(json["posts"].as_array().unwrap().len(), 1);
+        assert_eq!(json["posts"][0]["updated_at"], UPDATED_AT);
+    }
+
+    #[test]
+    fn test_post_update_envelope_minimal_has_only_updated_at_inside() {
+        let env = PostUpdateEnvelope::new(PostUpdate::new(UPDATED_AT));
+        let json = serde_json::to_value(&env).unwrap();
+        let post_obj = json["posts"][0].as_object().unwrap();
+        assert_eq!(
+            post_obj.len(),
+            1,
+            "only 'updated_at' should be in the posts[0] object"
+        );
+    }
+
+    #[test]
+    fn test_post_update_envelope_deserialization() {
+        let json = json!({
+            "posts": [{"updated_at": UPDATED_AT, "status": "published"}]
+        });
+        let env: PostUpdateEnvelope = serde_json::from_value(json).unwrap();
+        assert_eq!(env.posts.len(), 1);
+        assert_eq!(env.posts[0].updated_at, UPDATED_AT);
+        assert_eq!(env.posts[0].status, Some(PostStatus::Published));
+    }
+
+    #[test]
+    fn test_post_update_envelope_clone() {
+        let env = PostUpdateEnvelope::new(PostUpdate::new(UPDATED_AT));
+        let cloned = env.clone();
+        assert_eq!(cloned.posts[0].updated_at, UPDATED_AT);
     }
 }
