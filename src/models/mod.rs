@@ -4,6 +4,7 @@
 //! resources and their associated types.
 
 pub mod author;
+pub mod envelope;
 pub mod page;
 pub mod pagination;
 pub mod post;
