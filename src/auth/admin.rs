@@ -243,8 +243,7 @@ mod tests {
     use super::*;
 
     const VALID_KID: &str = "6748592f4b9b7700010f6564";
-    const VALID_SECRET: &str =
-        "b1b5b9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1";
+    const VALID_SECRET: &str = "b1b5b9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1";
     const VALID_KEY: &str =
         "6748592f4b9b7700010f6564:b1b5b9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1";
 
@@ -372,7 +371,9 @@ mod tests {
         let token = key.generate_jwt().unwrap();
         let sig = token.split('.').nth(2).unwrap();
         // Base64url chars only; no `=` padding
-        assert!(sig.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+        assert!(sig
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert!(!sig.contains('='));
     }
 
@@ -452,14 +453,20 @@ mod tests {
 
     #[test]
     fn test_hex_decode_valid() {
-        assert_eq!(hex_decode("deadbeef").unwrap(), vec![0xde, 0xad, 0xbe, 0xef]);
+        assert_eq!(
+            hex_decode("deadbeef").unwrap(),
+            vec![0xde, 0xad, 0xbe, 0xef]
+        );
     }
 
     #[test]
     fn test_hex_decode_uppercase() {
         // AdminApiKey::new normalises to lowercase before storing, but the
         // helper itself accepts whatever it receives.
-        assert_eq!(hex_decode("DEADBEEF").unwrap(), vec![0xde, 0xad, 0xbe, 0xef]);
+        assert_eq!(
+            hex_decode("DEADBEEF").unwrap(),
+            vec![0xde, 0xad, 0xbe, 0xef]
+        );
     }
 
     #[test]
