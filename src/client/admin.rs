@@ -453,6 +453,7 @@ mod tests {
 
         #[derive(Deserialize)]
         struct Resp {
+            #[allow(dead_code)]
             posts: Vec<serde_json::Value>,
         }
 
@@ -618,6 +619,7 @@ mod tests {
 
         #[derive(Deserialize)]
         struct Resp {
+            #[allow(dead_code)]
             posts: Vec<serde_json::Value>,
         }
 
