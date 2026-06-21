@@ -7,14 +7,16 @@ A strongly-typed, async Rust client for the [Ghost CMS](https://ghost.org/) API.
 [![CI](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/ci.yml/badge.svg)](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/ci.yml)
 [![Docs](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/docs.yml/badge.svg)](https://github.com/arunkumar-mourougappane/ghost-io-api/actions/workflows/docs.yml)
 
-> ⚠️ **v0.1.0 — Content API is stable. Admin API is planned for v0.2.0.**
+> **v0.2.0** — Content API (stable) + Admin API Posts CRUD (new in v0.2.0)
 
 ## Overview
 
-`ghost-io-api` is an ergonomic Rust interface to the Ghost Content API. It is designed to be:
+`ghost-io-api` is an ergonomic Rust interface to both the Ghost Content API
+and the Ghost Admin API. It is designed to be:
 
 - **Async-first** — built on `tokio` and `reqwest`
 - **Strongly typed** — every request and response is a Rust struct with serde derives
+- **Secure** — Admin API requests carry freshly-minted HS256 JWTs; no long-lived tokens
 - **Fluent** — a builder API for query parameters keeps call sites readable
 - **Correct** — integration-tested against `demo.ghost.io`
 
@@ -22,11 +24,15 @@ A strongly-typed, async Rust client for the [Ghost CMS](https://ghost.org/) API.
 
 ```toml
 [dependencies]
-ghost-io-api = "0.1"
+ghost-io-api = "0.2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
-## Quick Start
+---
+
+## Content API
+
+### Quick Start
 
 ```rust
 use ghost_io_api::auth::content::ContentApiKey;
@@ -38,28 +44,26 @@ async fn main() -> Result<()> {
     let key = ContentApiKey::new("your-content-api-key")?;
     let client = GhostContentClient::new("https://your-site.ghost.io", key)?;
 
-    // Browse posts
     let response = client.browse_posts(BrowsePostsParams::default()).await?;
     for post in &response.posts {
         println!("{} — {}", post.title, post.slug);
     }
-
     println!(
         "Page {}/{}, {} total",
         response.meta.pagination.page,
         response.meta.pagination.pages,
         response.meta.pagination.total,
     );
-
     Ok(())
 }
 ```
 
-## Features
+Content API keys are 26-character hex strings found under
+**Ghost Admin → Settings → Integrations → Content API**.
 
-### Content API (v0.1.0)
+### Endpoint Coverage
 
-| Endpoint | Browse | Read by ID | Read by Slug |
+| Resource | Browse | Read by ID | Read by Slug |
 |---|:---:|:---:|:---:|
 | Posts | ✅ | ✅ | ✅ |
 | Pages | ✅ | ✅ | ✅ |
@@ -67,36 +71,6 @@ async fn main() -> Result<()> {
 | Authors | ✅ | ✅ | ✅ |
 | Tiers | ✅ | — | — |
 | Settings | ✅ | — | — |
-
-### Admin API
-
-| Feature | Status |
-|---|---|
-| JWT authentication | 🔜 v0.2.0 |
-| Posts CRUD | 🔜 v0.2.0 |
-| Members | 🔜 v0.6.0 |
-
-## Usage
-
-### Authentication
-
-Content API keys are 26-character hexadecimal strings found under **Ghost Admin → Integrations → Content API**.
-
-```rust
-use ghost_io_api::auth::content::ContentApiKey;
-
-let key = ContentApiKey::new("22444f78447824223cefc48062")?;
-```
-
-### Creating a client
-
-```rust
-use ghost_io_api::client::content::GhostContentClient;
-
-let client = GhostContentClient::new("https://demo.ghost.io", key)?;
-```
-
-Trailing slashes on the URL are stripped automatically. The client sets `Accept-Version: v5.0` on every request.
 
 ### Browsing posts
 
@@ -113,8 +87,6 @@ let response = client.browse_posts(BrowsePostsParams {
 ```
 
 ### Fluent query builder
-
-Use [`BrowseParams`](src/params/browse.rs) for a chainable builder interface:
 
 ```rust
 use ghost_io_api::params::browse::BrowseParams;
@@ -135,8 +107,6 @@ let params = BrowsePostsParams {
     include: browse.get_include().map(str::to_string),
     ..Default::default()
 };
-
-let response = client.browse_posts(params).await?;
 ```
 
 ### Reading a single resource
@@ -145,7 +115,7 @@ let response = client.browse_posts(params).await?;
 // By ID
 let post = client.read_post_by_id("5ddc9141c35e7700383b2937", None).await?;
 
-// By slug, with relations
+// By slug, with relations embedded
 let post = client.read_post_by_slug("welcome", Some("authors,tags")).await?;
 
 // Pages, tags, authors follow the same pattern
@@ -158,7 +128,6 @@ let author = client.read_author_by_slug("ghost", Some("count.posts")).await?;
 
 ```rust
 let pagination = &response.meta.pagination;
-
 println!("Page {}/{}", pagination.page, pagination.pages);
 println!(
     "Showing items {}-{} of {}",
@@ -166,7 +135,6 @@ println!(
     pagination.end_index(),
     pagination.total,
 );
-
 if pagination.has_next() {
     // fetch next page …
 }
@@ -180,7 +148,126 @@ println!("Site: {}", settings.title.unwrap_or_default());
 println!("Nav items: {}", settings.nav_count());
 ```
 
-### Error handling
+---
+
+## Admin API *(new in v0.2.0)*
+
+The Admin API provides write access to your Ghost installation. Every request
+carries a freshly-signed HS256 JWT so tokens never sit long enough to expire.
+
+### Authentication
+
+Admin API keys take the form `{id}:{hex-secret}`. Obtain one under
+**Ghost Admin → Settings → Integrations → Add custom integration**.
+
+```rust
+use ghost_io_api::auth::admin::AdminApiKey;
+
+let key = AdminApiKey::new(
+    "6748592f4b9b7700010f6564:b1b5b9c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1"
+)?;
+```
+
+### Creating a client
+
+```rust
+use ghost_io_api::client::admin::GhostAdminClient;
+
+let client = GhostAdminClient::new("https://your-site.ghost.io", key)?;
+```
+
+### Browsing posts
+
+The Admin API returns posts of **all statuses** (draft, scheduled, published),
+unlike the Content API which only returns published posts.
+
+```rust
+use ghost_io_api::client::admin::AdminBrowsePostsParams;
+
+let response = client.browse_posts(AdminBrowsePostsParams {
+    limit: Some(10),
+    filter: Some("status:draft".to_string()),
+    order: Some("updated_at DESC".to_string()),
+    ..Default::default()
+}).await?;
+
+for post in &response.posts {
+    println!("[{}] {}", post.status, post.title);
+}
+```
+
+### Reading a single post
+
+```rust
+// By Ghost ID
+let post = client.read_post_by_id("5ddc9141c35e7700383b2937", None).await?;
+
+// By slug, with authors and tags embedded
+let post = client.read_post_by_slug("my-draft", Some("authors,tags")).await?;
+```
+
+### Creating a post
+
+```rust
+use ghost_io_api::models::post::{PostCreate, PostStatus, TagRef, AuthorRef};
+
+let post = client.create_post(PostCreate {
+    title: "Hello, Ghost!".to_string(),
+    status: Some(PostStatus::Draft),
+    custom_excerpt: Some("A brief summary.".to_string()),
+    tags: Some(vec![
+        TagRef::by_slug("rust"),       // resolves existing tag by slug
+        TagRef::by_name("New Topic"),  // creates tag if it doesn't exist
+    ]),
+    authors: Some(vec![AuthorRef::by_email("you@example.com")]),
+    ..Default::default()
+}).await?;
+
+println!("Created post: {} ({})", post.title, post.id);
+```
+
+### Updating a post
+
+Ghost uses **optimistic concurrency**: every update must include the
+`updated_at` timestamp from the most recent read. If the value is stale
+(someone else edited the post), Ghost returns a `409 ConflictError`.
+
+```rust
+use ghost_io_api::models::post::{PostUpdate, PostStatus};
+
+// Read first to get the current updated_at token
+let existing = client.read_post_by_id("5ddc9141c35e7700383b2937", None).await?;
+
+let updated = client.update_post(&existing.id, PostUpdate {
+    updated_at: existing.updated_at.unwrap(),
+    status: Some(PostStatus::Published),
+    title: Some("My Published Post".to_string()),
+    ..Default::default()
+}).await?;
+
+println!("Published: {}", updated.url.unwrap_or_default());
+```
+
+### Deleting a post
+
+```rust
+client.delete_post("5ddc9141c35e7700383b2937").await?;
+```
+
+### Posts CRUD reference
+
+| Method | Description |
+|---|---|
+| `browse_posts(params)` | List posts — all statuses, optional NQL filter |
+| `read_post_by_id(id, include?)` | Read one post by Ghost ID |
+| `read_post_by_slug(slug, include?)` | Read one post by slug |
+| `create_post(post)` | Create a new post |
+| `update_post(id, update)` | Update an existing post |
+| `delete_post(id)` | Permanently delete a post |
+
+---
+
+## Error Handling
 
 ```rust
 use ghost_io_api::error::GhostError;
@@ -194,6 +281,8 @@ match client.read_post_by_id("bad-id", None).await {
     Err(e) => eprintln!("Other error: {e}"),
 }
 ```
+
+---
 
 ## Examples
 
@@ -211,6 +300,19 @@ GHOST_CONTENT_KEY=your-content-api-key \
 cargo run --example list_posts
 ```
 
+### publish_post *(new in v0.2.0)*
+
+Demonstrates the full Admin API authoring workflow: create a draft, publish it,
+then delete it (so the example is safe to run repeatedly).
+
+```sh
+GHOST_URL=https://your-site.ghost.io \
+GHOST_ADMIN_KEY=<id>:<hex-secret> \
+cargo run --example publish_post
+```
+
+---
+
 ## Running Tests
 
 ```sh
@@ -220,6 +322,8 @@ cargo test
 # Integration tests (hits demo.ghost.io)
 cargo test --features integration-tests
 ```
+
+---
 
 ## License
 
